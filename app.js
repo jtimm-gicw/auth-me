@@ -2,46 +2,46 @@
 
 /*
 ========================================================
-CLASS 7 - BEARER AUTHENTICATION SERVER
+CLASS 8 - ACCESS CONTROL SERVER
 ========================================================
 
-Today's server demonstrates what happens AFTER a user
-has signed in.
-
-The important idea is:
-
-    We don't send the username/password
-    with every request.
-
-Instead:
-
-    SIGN IN
-       ↓
-    receive JWT
-       ↓
-    send JWT with future requests
-       ↓
-    Bearer middleware validates JWT
-       ↓
-    protected route runs
-
---------------------------------------------------------
-
-CLASS 6:
-Basic Authentication
+Today's server builds directly on Class 7.
 
 CLASS 7:
-Bearer Authentication
+
+    Sign in
+       ↓
+    JWT
+       ↓
+    Bearer token
+       ↓
+    bearerAuth
+       ↓
+    protected route
 
 CLASS 8:
-Role-Based Authorization
+
+    Sign in
+       ↓
+    JWT
+       ↓
+    Bearer token
+       ↓
+    bearerAuth
+       ↓
+    acl('capability')
+       ↓
+    protected route
 
 --------------------------------------------------------
-POINTER -->
 
-Next: tests/bearer.test.js
+AUTHENTICATION:
 
-We will prove that our authentication actually works.
+    "Who are you?"
+
+AUTHORIZATION:
+
+    "What are you allowed to do?"
 ========================================================
 */
 
@@ -53,6 +53,8 @@ const Users = require('./models/users');
 
 const bearerAuth = require('./bearer-auth-middleware');
 
+const acl = require('./acl-middleware');
+
 
 const app = express();
 
@@ -60,13 +62,13 @@ app.use(express.json());
 
 
 // ======================================================
-// HOME / TEST ROUTE
+// HOME
 // ======================================================
 
 app.get('/', (req, res) => {
 
   res.status(200).json({
-    message: 'Bearer Authentication Server is running!'
+    message: 'Access Control Server is running!'
   });
 
 });
@@ -77,25 +79,22 @@ app.get('/', (req, res) => {
 // ======================================================
 
 /*
-IMPORTANT:
+--------------------------------------------------------
+This is intentionally simple.
 
-This is intentionally simplified.
+We are focusing on authorization today.
 
-We are pretending that the user has already passed
-the password verification from Class 6.
-
-In the real application:
+The real Class 6 signin process would:
 
     username + password
             ↓
       bcrypt.compare()
             ↓
-          valid?
-            ↓
-        create token
+        create JWT
 
-For today's demo, our focus is what happens AFTER
-the token is created.
+For this demo, the username is enough to demonstrate
+the token/capability process.
+--------------------------------------------------------
 */
 
 app.post('/signin', (req, res) => {
@@ -117,10 +116,9 @@ app.post('/signin', (req, res) => {
 
   /*
   ------------------------------------------------------
-  Create a JWT.
+  The user's ROLE determines their capabilities.
 
-  This represents the token the user would receive
-  after successfully signing in.
+  Those capabilities are placed into the JWT.
   ------------------------------------------------------
   */
 
@@ -128,53 +126,47 @@ app.post('/signin', (req, res) => {
 
 
   res.status(200).json({
+
     message: 'Signin successful!',
+
     token: token
+
   });
 
 });
 
 
 // ======================================================
-// PROTECTED ROUTE
+// READ ROUTE
 // ======================================================
 
 /*
 --------------------------------------------------------
-THIS IS THE IMPORTANT ROUTE.
+This route requires:
 
-The middleware runs BEFORE the route handler.
+    1. Valid bearer token
+    2. 'read' capability
 
-Request:
+A normal user can access this.
 
-    GET /secret
-          ↓
-    bearerAuth
-          ↓
-    route handler
+An editor can access this.
 
-If bearerAuth calls:
-
-    next()
-
-the request continues.
-
-If bearerAuth calls:
-
-    next(error)
-
-the route does NOT run.
+An admin can access this.
 --------------------------------------------------------
 */
 
 app.get(
-  '/secret',
+  '/read',
   bearerAuth,
+  acl('read'),
   (req, res) => {
 
     res.status(200).json({
-      message: 'You made it to the secret route!',
-      user: req.user
+
+      message: 'You have READ access.',
+
+      user: req.user.username
+
     });
 
   }
@@ -182,17 +174,93 @@ app.get(
 
 
 // ======================================================
-// ANOTHER PROTECTED ROUTE
+// CREATE ROUTE
 // ======================================================
 
-app.get(
-  '/something',
+/*
+--------------------------------------------------------
+This route requires:
+
+    1. Valid bearer token
+    2. 'create' capability
+
+User:
+    ❌
+
+Editor:
+    ✅
+
+Admin:
+    ✅
+--------------------------------------------------------
+*/
+
+app.post(
+  '/create',
   bearerAuth,
+  acl('create'),
   (req, res) => {
 
     res.status(200).json({
-      message: 'You are authorized to see this data.',
-      username: req.user.username
+
+      message: 'You have CREATE access.',
+
+      user: req.user.username
+
+    });
+
+  }
+);
+
+
+// ======================================================
+// UPDATE ROUTE
+// ======================================================
+
+app.put(
+  '/update',
+  bearerAuth,
+  acl('update'),
+  (req, res) => {
+
+    res.status(200).json({
+
+      message: 'You have UPDATE access.',
+
+      user: req.user.username
+
+    });
+
+  }
+);
+
+
+// ======================================================
+// DELETE ROUTE
+// ======================================================
+
+/*
+--------------------------------------------------------
+This route requires:
+
+    'delete'
+
+Only the admin has this capability.
+--------------------------------------------------------
+*/
+
+app.delete(
+  '/delete',
+  bearerAuth,
+  acl('delete'),
+  (req, res) => {
+
+    res.status(200).json({
+
+      message: 'You have DELETE access.',
+
+      user: req.user.username
+
     });
 
   }
@@ -208,7 +276,9 @@ app.use((error, req, res, next) => {
   console.error(error.message);
 
   res.status(error.status || 500).json({
+
     error: error.message
+
   });
 
 });
@@ -225,7 +295,7 @@ if (require.main === module) {
   app.listen(PORT, () => {
 
     console.log(
-      `Bearer Authentication Server running on port ${PORT}`
+      `Access Control Server running on port ${PORT}`
     );
 
   });
@@ -234,7 +304,7 @@ if (require.main === module) {
 
 
 // ======================================================
-// EXPORT APP FOR TESTING
+// EXPORT APP FOR JEST/SUPERTEST
 // ======================================================
 
 module.exports = app;

@@ -2,59 +2,62 @@
 
 /*
 ========================================================
-CLASS 7 - USERS MODEL
+CLASS 8 - USERS MODEL
 ========================================================
 
-This is our fake/in-memory user model.
+ACCESS CONTROL / AUTHORIZATION
 
-IMPORTANT:
+CLASS 6:
+Authentication
 
-We are NOT teaching Sequelize today.
+    "Who are you?"
 
-We are teaching:
+CLASS 7:
+Bearer Authentication
 
-    "How does a server validate a bearer token?"
+    "Can you prove who you are?"
 
-In a real application, this model could use:
+CLASS 8:
+Authorization / Access Control
 
-    PostgreSQL
-    Sequelize
-    MongoDB
-    another database
-    another ORM
-
-The authentication concept stays the same.
+    "What are you allowed to do?"
 
 --------------------------------------------------------
 
-CLASS 6
-Basic Authentication
-    ↓
-username + password
-    ↓
-bcrypt.compare()
-    ↓
-authenticated
-    ↓
-create token
+Today's BIG IDEA:
 
-CLASS 7
-Bearer Authentication
-    ↓
-receive token
-    ↓
-authenticateToken()
-    ↓
-JWT validates token
-    ↓
-next()
+A user has a ROLE.
+
+The role determines the user's CAPABILITIES.
+
+Example:
+
+    user
+      ↓
+    ['read']
+
+    editor
+      ↓
+    ['read', 'create', 'update']
+
+    admin
+      ↓
+    ['read', 'create', 'update', 'delete']
+
+The user's capabilities are placed into the JWT.
+
+The bearer middleware validates the token.
+
+The ACL middleware then checks the capabilities.
 
 --------------------------------------------------------
 POINTER -->
 
-Next: bearer-auth-middleware.js
+Next:
+acl-middleware.js
 
-The middleware will call this model method.
+The ACL middleware will look at req.user.capabilities
+and decide whether the user is allowed to continue.
 ========================================================
 */
 
@@ -64,31 +67,96 @@ require('dotenv').config();
 
 
 // ======================================================
-// DEMO USERS
+// ROLES
 // ======================================================
 
 /*
-These users are only for the classroom demo.
+This is our simple "roles table."
 
-In the real application, users will come from
-PostgreSQL.
+It is an object instead of a database table because
+we are focusing on the authentication/authorization
+concept today.
 
-We are giving our users a token so that we can
-demonstrate what happens after signin.
+The KEY is the role name.
+
+The VALUE is an array of capabilities.
+*/
+
+const roles = {
+
+  user: [
+    'read'
+  ],
+
+  editor: [
+    'read',
+    'create',
+    'update'
+  ],
+
+  admin: [
+    'read',
+    'create',
+    'update',
+    'delete'
+  ]
+
+};
+
+
+// ======================================================
+// IN-MEMORY USERS
+// ======================================================
+
+/*
+These users are for the classroom demonstration.
+
+In the student application, these users will eventually
+come from PostgreSQL.
+
+Notice that each user now has a ROLE.
+
+--------------------------------------------------------
+
+Alice:
+
+    role = user
+
+Therefore:
+
+    capabilities = ['read']
+
+--------------------------------------------------------
+
+Bob:
+
+    role = editor
+
+Therefore:
+
+    capabilities = ['read', 'create', 'update']
 */
 
 const users = [
   {
     id: 1,
     username: 'alice',
-    password: 'not-used-in-this-demo',
-    role: 'student'
+    password: 'not-used-in-demo',
+    role: 'user'
   },
+
   {
     id: 2,
     username: 'bob',
-    password: 'not-used-in-this-demo',
-    role: 'instructor'
+    password: 'not-used-in-demo',
+    role: 'editor'
+  },
+
+  {
+    id: 3,
+    username: 'admin',
+    password: 'not-used-in-demo',
+    role: 'admin'
   }
 ];
 
@@ -114,30 +182,48 @@ function createToken(user) {
 
   /*
   ------------------------------------------------------
-  JWT contains information called a PAYLOAD.
+  CLASS 7:
 
-  We are keeping our payload very small.
+  We put information about the user into the token.
 
-  We are putting the user's:
+  CLASS 8:
 
-      id
+  We ALSO put the user's capabilities into the token.
+
+  This means that after bearer authentication,
+  req.user can contain:
+
       username
       role
-
-  into the token.
-
-  The token will be signed using our secret.
+      capabilities
   ------------------------------------------------------
   */
 
-  const payload = {
+  const userData = {
+
     id: user.id,
+
     username: user.username,
-    role: user.role
+
+    role: user.role,
+
+    capabilities: roles[user.role]
+
   };
 
+
+  /*
+  ------------------------------------------------------
+  Create the JWT.
+
+  The token is signed with our secret.
+
+  The client will receive this token after signin.
+  ------------------------------------------------------
+  */
+
   return jwt.sign(
-    payload,
+    userData,
     process.env.JWT_SECRET
   );
 
@@ -152,42 +238,33 @@ function authenticateToken(token) {
 
   /*
   ------------------------------------------------------
-  IMPORTANT:
+  This is still the Class 7 token validation method.
 
-  This method returns a PROMISE.
+  We have NOT changed the basic bearer authentication
+  process.
 
-  Why?
-
-  Our middleware will use:
-
-      .then()
-      .catch()
-
-  A valid token resolves.
-
-  An invalid token rejects.
+  jwt.verify() checks whether the token is valid.
   ------------------------------------------------------
   */
 
   try {
 
-    /*
-    ----------------------------------------------------
-    jwt.verify() checks:
-
-    - Is the token real?
-    - Has the token been changed?
-    - Was it signed with our secret?
-    - Is it otherwise valid?
-
-    If something is wrong, jwt.verify() throws an error.
-    ----------------------------------------------------
-    */
-
     const user = jwt.verify(
       token,
       process.env.JWT_SECRET
     );
+
+
+    /*
+    ----------------------------------------------------
+    Valid token:
+
+        Promise.resolve()
+
+    This sends the decoded user information back to
+    bearer-auth-middleware.js.
+    ----------------------------------------------------
+    */
 
     return Promise.resolve(user);
 
@@ -195,12 +272,11 @@ function authenticateToken(token) {
 
     /*
     ----------------------------------------------------
-    The token was NOT valid.
+    Invalid token:
 
-    Reject the Promise.
+        Promise.reject()
 
-    The middleware will catch this and send the
-    request to Express's error handler.
+    The bearer middleware will catch this error.
     ----------------------------------------------------
     */
 
@@ -211,9 +287,20 @@ function authenticateToken(token) {
 }
 
 
+// ======================================================
+// EXPORTS
+// ======================================================
+
 module.exports = {
+
   users,
+
+  roles,
+
   findUser,
+
   createToken,
+
   authenticateToken
+
 };
