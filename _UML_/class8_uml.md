@@ -80,3 +80,20 @@
 │ PROTECTED ROUTE  │
 └──────────────────┘
 ```
+
+```text
+JWT
+ ↓
+bearerAuth
+ ↓
+"Who are you?"
+ ↓
+req.user
+ ↓
+acl('delete')
+ ↓
+"Can you delete?"
+ ↓
+ YES → next() → route
+ NO  → 403
+```
