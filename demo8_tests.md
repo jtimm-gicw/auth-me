@@ -150,7 +150,7 @@ GET /read → bearerAuth → ❌ no token → 401 → acl() never even runs
 | | |
 |---|---|
 | **Purpose** | A `read`-only user CAN read |
-| **Command** | `curl http://localhost:3000/read -H "Authorization: Bearer ALICE_TOKEN"` |
+| **Command** | `curl http://localhost:3000/read -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhbGljZSIsInJvbGUiOiJ1c2VyIiwiY2FwYWJpbGl0aWVzIjpbInJlYWQiXSwiaWF0IjoxNzg5MDc1MjA5fQ.6o49z0GgztyMZzm9zPWppaT4xSHyKV30zs0jCfoXMlo"` |
 | **Expect** | `200` |
 
 ```json
@@ -169,7 +169,7 @@ GET /read → bearerAuth → ❌ no token → 401 → acl() never even runs
 | | |
 |---|---|
 | **Purpose** | A valid, authenticated user can still be **forbidden** |
-| **Command** | `curl -X POST http://localhost:3000/create -H "Authorization: Bearer ALICE_TOKEN"` |
+| **Command** | `curl -X POST http://localhost:3000/create -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhbGljZSIsInJvbGUiOiJ1c2VyIiwiY2FwYWJpbGl0aWVzIjpbInJlYWQiXSwiaWF0IjoxNzg5MDc1MjA5fQ.6o49z0GgztyMZzm9zPWppaT4xSHyKV30zs0jCfoXMlo"` |
 | **Expect** | `403` |
 
 ```json
@@ -213,7 +213,7 @@ acl('create')
 | | |
 |---|---|
 | **Purpose** | An editor CAN create |
-| **Command** | `curl -X POST http://localhost:3000/create -H "Authorization: Bearer BOB_TOKEN"` |
+| **Command** | `curl -X POST http://localhost:3000/create -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJib2IiLCJyb2xlIjoiZWRpdG9yIiwiY2FwYWJpbGl0aWVzIjpbInJlYWQiLCJjcmVhdGUiLCJ1cGRhdGUiXSwiaWF0IjoxNzg5MDc1MjI1fQ.AEHAX5I0QzBYszo9OB7NFihyHm7TTxZgUOAkz5vU404"` |
 | **Expect** | `200` |
 
 ```json
@@ -230,7 +230,7 @@ acl('create')
 | | |
 |---|---|
 | **Purpose** | An editor CAN update |
-| **Command** | `curl -X PUT http://localhost:3000/update -H "Authorization: Bearer BOB_TOKEN"` |
+| **Command** | `curl -X PUT http://localhost:3000/update -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJib2IiLCJyb2xlIjoiZWRpdG9yIiwiY2FwYWJpbGl0aWVzIjpbInJlYWQiLCJjcmVhdGUiLCJ1cGRhdGUiXSwiaWF0IjoxNzg5MDc1MjI1fQ.AEHAX5I0QzBYszo9OB7NFihyHm7TTxZgUOAkz5vU404"` |
 | **Expect** | `200` |
 
 ```json
@@ -249,7 +249,7 @@ acl('create')
 | | |
 |---|---|
 | **Purpose** | Even an editor has a ceiling |
-| **Command** | `curl -X DELETE http://localhost:3000/delete -H "Authorization: Bearer BOB_TOKEN"` |
+| **Command** | `curl -X DELETE http://localhost:3000/delete -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJib2IiLCJyb2xlIjoiZWRpdG9yIiwiY2FwYWJpbGl0aWVzIjpbInJlYWQiLCJjcmVhdGUiLCJ1cGRhdGUiXSwiaWF0IjoxNzg5MDc1MjI1fQ.AEHAX5I0QzBYszo9OB7NFihyHm7TTxZgUOAkz5vU404"` |
 | **Expect** | `403` |
 
 ```json
@@ -265,7 +265,7 @@ acl('create')
 | | |
 |---|---|
 | **Purpose** | The payoff — full access |
-| **Command** | `curl -X DELETE http://localhost:3000/delete -H "Authorization: Bearer ADMIN_TOKEN"` |
+| **Command** | `curl -X DELETE http://localhost:3000/delete -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImNhcGFiaWxpdGllcyI6WyJyZWFkIiwiY3JlYXRlIiwidXBkYXRlIiwiZGVsZXRlIl0sImlhdCI6MTc4OTA3NTI1MX0.DuJlCDdbDHCpB90wEZfq1tw0gfxOAwHBy3fdPJgPqmE"` |
 | **Expect** | `200` |
 
 ```json
@@ -276,6 +276,12 @@ acl('create')
 ```
 
 > 🎉 *"Admin has all four capabilities, so admin passes every acl() check we've run today."*
+
+---
+
+## ⭐ npm tests — Test using jest and supertest
+
+All tests should pass using `acl.test.js`.
 
 ---
 
