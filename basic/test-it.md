@@ -13,7 +13,6 @@ For each test, we will show:
 5. **Why?** — a short explanation
 
 ---
-
 # STEP 0 — Start the Server
 
 Open a terminal in the project.
@@ -35,6 +34,120 @@ Keep this terminal running.
 Open a **second terminal** for the tests.
 
 ---
+# TEST 0 — Run the Password Demo
+
+Before testing the authentication server, run the password demo.
+
+## Command
+
+Open a **second terminal window or tab** and run:
+
+```bash
+node passwords/password.js
+```
+
+### Code being tested
+**Base64 encoding**
+```js
+const encodedPassword = Buffer
+  .from(password)
+  .toString('base64');
+Base64 decoding
+const decodedPassword = Buffer
+  .from(encodedPassword, 'base64')
+  .toString();
+```
+
+**Create a bcrypt hash**
+
+```js
+const hash1 = await bcrypt.hash(password, 10);
+
+const hash2 = await bcrypt.hash(password, 10);
+```
+
+**Compare a correct password**
+
+```js
+const correctPassword = await bcrypt.compare(
+  'secret123',
+  hash1
+);
+```
+
+**Compare an incorrect password**
+
+```js
+const wrongPassword = await bcrypt.compare(
+  'wrongpassword',
+  hash1
+);
+```
+
+#### Expected result
+
+```bash
+Base64 encoded password:
+c2VjcmV0MTIz
+
+Decoded password:
+secret123
+
+First bcrypt hash:
+$2b$10$...
+
+Second bcrypt hash:
+$2b$10$...
+
+Are the hashes the same?
+false
+
+Correct password:
+true
+
+Wrong password:
+false
+```
+
+> The bcrypt hashes will be different each time, so the exact hash values will not match the example.
+
+**Why?**
+
+This demo shows the difference between encoding and hashing.
+
+*Base64 can be reversed:*
+
+```bash
+secret123
+    ↓
+Base64 encode
+    ↓
+c2VjcmV0MTIz
+    ↓
+Base64 decode
+    ↓
+secret123
+```
+
+Bcrypt creates a password hash that we do not decode.
+
+Instead, we use `bcrypt.compare()` to check whether a password matches the hash.
+
+```bash
+password
+    ↓
+bcrypt.hash()
+    ↓
+password hash
+
+password + password hash
+    ↓
+bcrypt.compare()
+    ↓
+true or false
+```
+
+***Key idea:*** The password demo shows how Base64 and bcrypt work. The tests below show how those same ideas are used by the authentication server.
 
 # TEST 1 — Is the Server Running?
 
@@ -609,7 +722,7 @@ For real applications, Basic Authentication should be used over **HTTPS** so the
 
 ---
 
-# 🎯 The Main Class 6 Demonstration
+# 🎯 NOTE
 
 If you are short on time, focus on these **three tests**:
 
