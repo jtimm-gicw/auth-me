@@ -126,8 +126,10 @@ Class 7 → Authorization: Bearer ...
 | **Expect** | `401` |
 
 ```json
-{ "error": "invalid signature" }
+{ "error": "jwt malformed" }
 ```
+
+> ℹ️ You may instead see `"invalid signature"` — both are valid outcomes here. `abc123` doesn't even look like a JWT (a real JWT has three dot-separated segments), so `jwt.verify()` rejects it as **malformed** before it ever gets to checking the signature. Either message is correct — what matters for the demo is the `401`.
 
 **Flow:**
 ```
@@ -144,7 +146,7 @@ Authorization header → Bearer → abc123 → authenticateToken()
 | | |
 |---|---|
 | **Purpose** | The payoff — authentication succeeds |
-| **Command** | `curl http://localhost:3000/secret -H "Authorization: Bearer YOUR_TOKEN_HERE"` |
+| **Command** | `curl http://localhost:3000/secret -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhbGljZSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzg5MDczODQzfQ.2vnp5bVZGA7-UF9SOXC8VmoZKN8pFGpM4Zaudi6tm6M"` |
 | **Expect** | `200` |
 
 ```json
@@ -192,7 +194,7 @@ next()
 | | |
 |---|---|
 | **Purpose** | The token isn't tied to one route |
-| **Command** | `curl http://localhost:3000/something -H "Authorization: Bearer YOUR_TOKEN_HERE"` |
+| **Command** | `curl http://localhost:3000/something -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhbGljZSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzg5MDczODQzfQ.2vnp5bVZGA7-UF9SOXC8VmoZKN8pFGpM4Zaudi6tm6M"` |
 | **Expect** | `200` |
 
 ```json
@@ -222,12 +224,18 @@ next()
 |---|---|
 | **Purpose** | Show *why* token validation matters |
 | **Setup** | Take the valid token and change one character near the end |
-| **Command** | `curl http://localhost:3000/secret -H "Authorization: Bearer YOUR_CHANGED_TOKEN"` |
+| **Command** | `curl http://localhost:3000/secret -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhbGljZSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzg5MDczODQzfQ.2vnp5bVZGA7-UF9SOXC8VmoZKN8pFGpM4Zaudi6tm6M"` |
 | **Expect** | `401` |
 
 **Why:** JWTs are signed. Changing the token breaks signature verification, and `jwt.verify()` rejects it.
 
 > 📢 *"Notice something important: I didn't remove the token. I didn't change Bearer. I only changed the token. The server still rejects it because the token is no longer valid."*
+
+---
+
+## ⭐ npm test — Runs tests using jest and supertest
+
+All tests should pass from `bearer.test.js`.
 
 ---
 
