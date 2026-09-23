@@ -1,129 +1,55 @@
-# Class 6 - Basic Authentication Demo
+# 🔐 Class 7 — Bearer Authentication
 
-## Goal
+## 🎯 Goal
 
-Today we are learning how a server can determine:
+Today we are learning what happens **after a user has authenticated**.
 
-> "Who are you?"
+In Class 6, we asked:
 
-This is called:
+> **"Who are you?"**
 
-**Authentication**
+This is **Authentication**.
 
-We are NOT learning authorization yet.
+In Class 7, we learn how the server can remember that a user has already authenticated without requiring the user to repeatedly send their password.
 
-Authorization will come later.
+We will use:
+
+**Bearer Authentication + JSON Web Tokens (JWTs)**
 
 ---
 
-# Demo Order
-
-## Part 1 - Passwords
-
-Start with:
-
-```bash
-node demo/passwords/passwords.js
-```
-
-**We will compare:**
-
-- Base64 encoding
-
-- Bcrypt hashing
-
-***Base64***
+# 🧭 Module 2 Progression
 
 ```text
-secret123
-     ↓
-Base64
-     ↓
-c2VjcmV0MTIz
-```
-
-> Base64 can be decoded.
-> It is **NOT** password protection.
-
-***Bcrypt***
-
-```text
-secret123
-     ↓
-bcrypt
-     ↓
-$2b$10$...
-```
-
-> Bcrypt creates a hash.
-> The same password can produce different hashes.
-> We use bcrypt.compare() to check a password.
-
-## Part 2 - Authentication Server
-
-**Run:**
-
-```bash
-node demo/basic/server.js
-```
-
-The server provides:
-
-```bash
-GET  /
-POST /signup
-POST /signin
-GET  /protected
-Signup
-```
-
-**Send:**
-
-```bash
-POST /signup
-```
-
-with:
-
-```json
-{
-  "username": "alice",
-  "password": "secret123"
-}
-```
-
-**The server:**
-
-```text
-username + password
+CLASS 6
+Basic Authentication
         ↓
-bcrypt.hash()
+Username + Password
         ↓
-store username + hash
+"Who are you?"
+
+
+CLASS 7
+Bearer Authentication
+        ↓
+JWT
+        ↓
+"Can you prove you already authenticated?"
+
+
+CLASS 8
+Role-Based Authorization
+        ↓
+Roles + Permissions
+        ↓
+"What are you allowed to do?"
 ```
 
-The plain-text password is **NOT** stored.
+---
 
-```bash
-Signin
-```
+# 📚 Part 1 — Review Class 6
 
-**Send:**
-
-```bash
-POST /signin
-```
-
-*with:*
-
-```json
-{
-  "username": "alice",
-  "password": "secret123"
-}
-```
-
-**The server:**
+In Class 6, authentication looked like:
 
 ```text
 username + password
@@ -132,142 +58,733 @@ find user
         ↓
 bcrypt.compare()
         ↓
-valid / invalid
+valid?
+        ↓
+authenticated
 ```
 
-### Basic Authentication
+Basic Authentication uses:
 
-**Basic Authentication uses an HTTP header:**
-
-*Authorization:* Basic <Base64 credentials>
-
-The credentials contain:
-
-```js
-username:password
+```text
+Authorization: Basic <credentials>
 ```
 
-*For example:*
+Class 7 introduces a different approach.
 
-```js
-alice:secret123
+```text
+SIGN IN
+   ↓
+Receive JWT
+   ↓
+Send JWT with future requests
+   ↓
+Server verifies JWT
+   ↓
+Access protected resource
 ```
 
-is *Base64* encoded before being sent.
+---
 
-#### IMPORTANT:
+# 🚀 Part 2 — Start the Server
 
-**Base64 is encoding.**
-
-It is **NOT** encryption.
-
-HTTPS is *required to protect* Basic Authentication while it travels over the network.
-
-**Protected Route**
-
-Try:
+Run:
 
 ```bash
-GET /protected
+node app.js
 ```
 
-***without* authentication.**
+You should see:
 
-The server should respond with:
+```text
+Bearer Authentication Server running on port 3000
+```
 
-> 401 Unauthorized
+Our server provides:
 
-Then provide valid Basic Authentication credentials.
+```text
+GET  /
+POST /signin
+GET  /secret
+GET  /something
+```
 
-**The server:**
+The routes:
 
-1. Reads the Authorization header
-2. Decodes the Base64 credentials
-3. Finds the user
-4. Uses bcrypt to verify the password
-5. Allows the request
+```text
+/secret
+/something
+```
 
-## Important Vocabulary
+are protected with Bearer Authentication.
 
-**Authentication**
+---
 
-*"Who are you?"*
+# 👤 Part 3 — Sign In
 
-Example:
+Send a request to:
+
+```text
+POST /signin
+```
+
+with:
+
+```json
+{
+  "username": "alice"
+}
+```
+
+For today's demo, signin is intentionally simplified.
+
+We are pretending Alice already passed the password verification from Class 6.
+
+A complete application would look like:
 
 ```text
 username + password
+        ↓
+find user
+        ↓
+bcrypt.compare()
+        ↓
+valid?
+        ↓
+create JWT
 ```
 
-**Authorization**
+Today we focus on what happens **after authentication succeeds**.
 
-*"What are you allowed to do?"*
+---
 
-> We will learn this later.
+# 🎟️ Part 4 — Create the JWT
 
-**Encoding**
+The server finds the user:
 
-*Changes the representation of information.*
+```js
+const user = Users.findUser(username);
+```
 
-Example:
+Then creates a token:
+
+```js
+const token = Users.createToken(user);
+```
+
+The JWT contains a **payload**.
+
+A payload is the information stored inside the token.
+
+Our payload contains:
+
+```js
+const payload = {
+  id: user.id,
+  username: user.username,
+  role: user.role
+};
+```
+
+The token is created with:
+
+```js
+jwt.sign(
+  payload,
+  process.env.JWT_SECRET
+);
+```
+
+The response looks similar to:
+
+```json
+{
+  "message": "Signin successful!",
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+---
+
+# 🪪 What Is a JWT?
+
+**JWT** means:
+
+> **JSON Web Token**
+
+A JWT is a token that can carry information about an authenticated user.
 
 ```text
-Base64
+User signs in
+     ↓
+Server verifies user
+     ↓
+Server creates JWT
+     ↓
+Client receives JWT
+     ↓
+Client sends JWT
+on future requests
 ```
 
-> It can be reversed.
+---
 
-**Hashing**
+# 🔑 JWT Secret
 
-*Creates a one-way representation.*
-
-Example:
+The token is signed using:
 
 ```text
-bcrypt
+JWT_SECRET
 ```
 
-> We do not decode a bcrypt password.
-> We verify it.
+For example, our `.env` file may contain:
 
-#### What Students Should Notice
+```text
+JWT_SECRET=your-secret-here
+```
 
-The authentication process is really a series of steps:
+The secret is used when creating and verifying tokens.
+
+⚠️ **IMPORTANT**
+
+The JWT secret should **not** be placed directly into public source code or committed to GitHub.
+
+---
+
+# 📨 Part 5 — Bearer Authentication
+
+Bearer Authentication uses the HTTP:
+
+```text
+Authorization
+```
+
+header.
+
+The format is:
+
+```text
+Authorization: Bearer <token>
+```
+
+For example:
+
+```text
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+```
+
+---
+
+# 🔄 Class 6 vs. Class 7
+
+### Class 6
+
+```text
+Authorization: Basic <credentials>
+```
+
+### Class 7
+
+```text
+Authorization: Bearer <token>
+```
+
+The important difference is:
+
+```text
+CLASS 6
+username + password
+        ↓
+Basic Authentication
+
+
+CLASS 7
+JWT
+ ↓
+Bearer Authentication
+```
+
+---
+
+# 🛡️ Part 6 — Protected Routes
+
+Our `/secret` route uses:
+
+```js
+app.get(
+  '/secret',
+  bearerAuth,
+  (req, res) => {
+
+    res.status(200).json({
+      message: 'You made it to the secret route!',
+      user: req.user
+    });
+
+  }
+);
+```
+
+Notice:
+
+```js
+bearerAuth
+```
+
+comes **before** the route handler.
+
+That means:
 
 ```text
 REQUEST
    ↓
-Get credentials
+bearerAuth
    ↓
-Find user
-   ↓
-Verify password
-   ↓
-Authenticated?
-   ↓
-YES → allow request
-NO  → 401 Unauthorized
+route handler
 ```
 
-### Lab Pointer
+The middleware gets the first chance to inspect the request.
 
-The demo intentionally puts most of the logic in one file.
+---
 
-Students will now take this working server and:
+# 🚫 Request Without a Token
+
+If we request:
 
 ```text
-create middleware
-move logic into separate files
-clean up the server
-prepare the authentication system for future classes
-Module 2 Progression
+GET /secret
 ```
 
-*Class 6*
-→ Basic Authentication
+without authentication:
 
-*Class 7*
-→ Bearer Authentication / Tokens
+```text
+GET /secret
+     ↓
+bearerAuth
+     ↓
+No Authorization Header
+     ↓
+❌ 401 Unauthorized
+```
 
-*Class 8*
-→ Role-Based Authorization
+The protected route does **not** run.
+
+---
+
+# 🔍 Part 7 — Bearer Authentication Middleware
+
+The middleware performs several checks.
+
+## Step 1 — Find the Authorization Header
+
+```js
+const authHeader = req.headers.authorization;
+```
+
+If there is no header:
+
+```text
+❌ 401 Unauthorized
+```
+
+---
+
+## Step 2 — Separate Bearer and Token
+
+An Authorization header looks like:
+
+```text
+Bearer abc123
+```
+
+The middleware separates it:
+
+```js
+const [scheme, token] = authHeader.split(' ');
+```
+
+Now we have:
+
+```text
+scheme = Bearer
+
+token = abc123
+```
+
+---
+
+## Step 3 — Check the Scheme
+
+The middleware expects:
+
+```text
+Bearer
+```
+
+If someone sends:
+
+```text
+Authorization: Basic abc123
+```
+
+the request is rejected.
+
+```text
+Basic
+  ↓
+❌ 401
+```
+
+---
+
+## Step 4 — Verify the JWT
+
+The middleware calls:
+
+```js
+Users.authenticateToken(token);
+```
+
+The users model uses:
+
+```js
+jwt.verify(
+  token,
+  process.env.JWT_SECRET
+);
+```
+
+This verifies the token.
+
+---
+
+# ✅ Part 8 — Valid Token
+
+If the token is valid:
+
+```js
+req.user = user;
+
+next();
+```
+
+`req.user` now contains information about the authenticated user.
+
+For example:
+
+```js
+{
+  id: 1,
+  username: 'alice',
+  role: 'student'
+}
+```
+
+Then:
+
+```js
+next();
+```
+
+means:
+
+> **"Authentication succeeded. Continue."**
+
+---
+
+# 🔄 Successful Request Flow
+
+```text
+CLIENT
+   |
+   | Authorization: Bearer JWT
+   ↓
+bearerAuth
+   |
+   ↓
+Check Authorization header
+   |
+   ↓
+Check Bearer scheme
+   |
+   ↓
+jwt.verify()
+   |
+   ↓
+VALID
+   |
+   ↓
+req.user = user
+   |
+   ↓
+next()
+   |
+   ↓
+Protected Route
+   |
+   ↓
+✅ 200 OK
+```
+
+---
+
+# ❌ Part 9 — Invalid Token
+
+If the token is fake, changed, or otherwise invalid:
+
+```text
+REQUEST
+   ↓
+Bearer token
+   ↓
+jwt.verify()
+   ↓
+INVALID
+   ↓
+next(error)
+   ↓
+❌ 401 Unauthorized
+```
+
+The protected route does not run.
+
+---
+
+# ♻️ Part 10 — Reusing the Token
+
+The same valid token can be sent to:
+
+```text
+GET /something
+```
+
+Both routes use:
+
+```js
+bearerAuth
+```
+
+So one authenticated token can be used with multiple protected routes.
+
+```text
+                 JWT
+                  |
+          ┌───────┴───────┐
+          ↓               ↓
+       /secret        /something
+          ↓               ↓
+     bearerAuth       bearerAuth
+          ↓               ↓
+       ✅ 200           ✅ 200
+```
+
+---
+
+# 📖 Important Vocabulary
+
+### Authentication
+
+> **"Who are you?"**
+
+---
+
+### Bearer Authentication
+
+Authentication where the client sends a token:
+
+```text
+Authorization: Bearer <token>
+```
+
+---
+
+### Token
+
+A value given to a client after successful authentication.
+
+---
+
+### JWT
+
+**JSON Web Token**
+
+A commonly used format for authentication tokens.
+
+---
+
+### Payload
+
+Information stored inside a JWT.
+
+Example:
+
+```js
+{
+  id: 1,
+  username: 'alice',
+  role: 'student'
+}
+```
+
+---
+
+### JWT Secret
+
+A secret value used when signing and verifying JWTs.
+
+---
+
+### Middleware
+
+Code that runs between the request and the route handler.
+
+```text
+REQUEST
+   ↓
+MIDDLEWARE
+   ↓
+ROUTE
+   ↓
+RESPONSE
+```
+
+---
+
+### `next()`
+
+Tells Express:
+
+> **"Continue to the next step."**
+
+```text
+Valid token
+    ↓
+next()
+    ↓
+Protected Route
+```
+
+---
+
+### `next(error)`
+
+Tells Express:
+
+> **"Something went wrong. Send this to the error handler."**
+
+```text
+Invalid token
+     ↓
+next(error)
+     ↓
+Error Handler
+     ↓
+401
+```
+
+---
+
+# 🧠 What Students Should Notice
+
+Bearer Authentication is really a series of steps:
+
+```text
+SIGN IN
+   ↓
+Create JWT
+   ↓
+Return JWT
+   ↓
+Client receives JWT
+   ↓
+Client requests protected resource
+   ↓
+Authorization: Bearer <JWT>
+   ↓
+bearerAuth
+   ↓
+jwt.verify()
+   ↓
+Valid?
+   |
+   ├──── YES ────→ req.user
+   |                  ↓
+   |                next()
+   |                  ↓
+   |             Protected Route
+   |                  ↓
+   |               ✅ 200
+   |
+   └──── NO ─────→ ❌ 401
+```
+
+---
+
+# 🔗 Lab Pointer
+
+Pay special attention to:
+
+```js
+jwt.sign()
+```
+
+Creates a JWT.
+
+```js
+jwt.verify()
+```
+
+Verifies a JWT.
+
+```js
+req.headers.authorization
+```
+
+Gets the Authorization header.
+
+```js
+req.user
+```
+
+Stores information about the authenticated user.
+
+```js
+next()
+```
+
+Allows the request to continue.
+
+---
+
+# 🏁 Class 7 Takeaway
+
+```text
+USER AUTHENTICATES
+        ↓
+SERVER CREATES JWT
+        ↓
+CLIENT RECEIVES JWT
+        ↓
+CLIENT SENDS JWT
+        ↓
+BEARER MIDDLEWARE
+        ↓
+JWT VERIFIED
+        ↓
+req.user
+        ↓
+PROTECTED ROUTE
+```
+
+### ➡️ Next: Class 8
+
+Now that the server knows:
+
+> **"Who are you?"**
+
+Class 8 will ask:
+
+> **"What are you allowed to do?"**
+
+That introduces:
+
+**Role-Based Authorization + ACL**
