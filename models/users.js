@@ -223,7 +223,7 @@ function createToken(user) {
   */
 
   return jwt.sign(
-    userData,
+    userData, // adds user information and capabilities to the token
     process.env.JWT_SECRET
   );
 
@@ -293,14 +293,14 @@ function authenticateToken(token) {
 
 module.exports = {
 
-  users,
+  users,// exported user data
 
-  roles,
+  roles, // exported role data
 
-  findUser,
+  findUser, // exported user lookup function
 
-  createToken,
+  createToken, // exported token creation function
 
-  authenticateToken
+  authenticateToken // exported token authentication function
 
 };

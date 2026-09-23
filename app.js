@@ -156,9 +156,9 @@ An admin can access this.
 */
 
 app.get(
-  '/read',
+  '/read', 
   bearerAuth,
-  acl('read'),
+  acl('read'), // adds access control for 'read' capability
   (req, res) => {
 
     res.status(200).json({
@@ -198,7 +198,7 @@ Admin:
 app.post(
   '/create',
   bearerAuth,
-  acl('create'),
+  acl('create'), // adds access control for 'create' capability
   (req, res) => {
 
     res.status(200).json({
@@ -220,7 +220,7 @@ app.post(
 app.put(
   '/update',
   bearerAuth,
-  acl('update'),
+  acl('update'), // adds access control for 'update' capability
   (req, res) => {
 
     res.status(200).json({
@@ -252,7 +252,7 @@ Only the admin has this capability.
 app.delete(
   '/delete',
   bearerAuth,
-  acl('delete'),
+  acl('delete'), // adds access control for 'delete' capability
   (req, res) => {
 
     res.status(200).json({

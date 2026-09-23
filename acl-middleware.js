@@ -131,7 +131,7 @@ module.exports = (capability) => {
         'User authentication required.'
       );
 
-      error.status = 401;
+      error.status = 401;  // means you are not authenticated, so UNAUTHORIZED
 
       return next(error);
 
@@ -197,9 +197,13 @@ module.exports = (capability) => {
       `You do not have the '${capability}' capability.`
     );
 
-    error.status = 403;
+    error.status = 403;  // means you are authenticated but not authorized, so FORBIDDEN
 
     return next(error);
+
+// Remember: 
+// 401 = Who are you? (not authenticated)
+// 403 = I know who you are, but you're not allowed to do this.
 
   };
 
