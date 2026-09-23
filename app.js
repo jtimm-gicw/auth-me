@@ -26,17 +26,6 @@ Instead:
     protected route runs
 
 --------------------------------------------------------
-
-CLASS 6:
-Basic Authentication
-
-CLASS 7:
-Bearer Authentication
-
-CLASS 8:
-Role-Based Authorization
-
---------------------------------------------------------
 POINTER -->
 
 Next: tests/bearer.test.js

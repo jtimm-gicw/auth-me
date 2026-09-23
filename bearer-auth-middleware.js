@@ -131,16 +131,6 @@ function bearerAuth(req, res, next) {
   /*
   ------------------------------------------------------
   STEP 4: Ask the USERS MODEL to validate the token.
-
-  Notice what this middleware DOES NOT know how to do.
-
-  It does not know how JWT works.
-
-  It does not know how the database works.
-
-  It simply asks the model:
-
-      "Is this token valid?"
   ------------------------------------------------------
   */
 
@@ -162,7 +152,6 @@ function bearerAuth(req, res, next) {
       */
 
       req.user = user;
-
 
       /*
       --------------------------------------------------

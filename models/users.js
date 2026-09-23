@@ -9,9 +9,7 @@ This is our fake/in-memory user model.
 
 IMPORTANT:
 
-We are NOT teaching Sequelize today.
-
-We are teaching:
+We are learning:
 
     "How does a server validate a bearer token?"
 
@@ -61,21 +59,6 @@ The middleware will call this model method.
 const jwt = require('jsonwebtoken');
 
 require('dotenv').config();
-
-
-// ======================================================
-// DEMO USERS
-// ======================================================
-
-/*
-These users are only for the classroom demo.
-
-In the real application, users will come from
-PostgreSQL.
-
-We are giving our users a token so that we can
-demonstrate what happens after signin.
-*/
 
 const users = [
   {
